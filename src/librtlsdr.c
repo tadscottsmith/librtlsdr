@@ -1764,6 +1764,13 @@ int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx,
 	_rtlsdr_alloc_async_buffers(dev);
 
 	for(i = 0; i < dev->xfer_buf_num; ++i) {
+	/* Sleep a little here. 
+	   Will avoid crash in case there are many small buffers. */
+#ifdef _WIN32
+		Sleep(1);
+#else
+		usleep(1000);
+#endif
 		libusb_fill_bulk_transfer(dev->xfer[i],
 					  dev->devh,
 					  0x81,
