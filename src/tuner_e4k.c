@@ -985,12 +985,12 @@ static int magic_init(struct e4k_state *e4k)
 {
 	e4k_reg_write(e4k, 0x7e, 0x01);
 	e4k_reg_write(e4k, 0x7f, 0xfe);
-	e4k_reg_write(e4k, 0x82, 0x00);
+	e4k_reg_write(e4k, 0x82, 0x00); /* ? not in data sheet */
 	e4k_reg_write(e4k, 0x86, 0x50);	/* polarity A */
-	e4k_reg_write(e4k, 0x87, 0x20);
-	e4k_reg_write(e4k, 0x88, 0x01);
-	e4k_reg_write(e4k, 0x9f, 0x7f);
-	e4k_reg_write(e4k, 0xa0, 0x07);
+	e4k_reg_write(e4k, 0x87, 0x20); /* configure mixer */
+	e4k_reg_write(e4k, 0x88, 0x01); /* configure mixer */
+	e4k_reg_write(e4k, 0x9f, 0x7f); /* configure LNA */
+	e4k_reg_write(e4k, 0xa0, 0x07); /* configure LNA */
 
 	return 0;
 }
