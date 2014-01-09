@@ -1820,7 +1820,7 @@ int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx,
 							   &dev->async_cancel);
 		if (r < 0) {
 			/*fprintf(stderr, "handle_events returned: %d\n", r);*/
-			if (r == LIBUSB_ERROR_INTERRUPTED) /* stray signal */
+			if (r == LIBUSB_ERROR_INTERRUPTED || r==-1) /* stray signal */
 				continue;
 			break;
 		}
