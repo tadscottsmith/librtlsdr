@@ -161,17 +161,25 @@ int e4000_set_gain(void *dev, int gain) {
 #if 0
 	int enhgain = (gain - 420);
 #endif
-	if(e4k_set_lna_gain(&devt->e4k_s, min(300, gain - mixgain * 10)) == -EINVAL)
-		return -1;
-	if(e4k_mixer_gain_set(&devt->e4k_s, mixgain) == -EINVAL)
-		return -1;
-#if 0 /* enhanced mixer gain seems to have no effect */
-	if(enhgain >= 0)
-		if(e4k_set_enh_gain(&devt->e4k_s, enhgain) == -EINVAL)
+	/* Use only (the modified) set_lna_gain if the user
+	   asked for linearity or sensitivity. */
+	if (devt->e4k_s.gain_mode <= GAIN_MODE_MANUAL) {
+		if (e4k_set_lna_gain(&devt->e4k_s, min(300, gain - mixgain * 10)) == -EINVAL)
 			return -1;
+		if (e4k_mixer_gain_set(&devt->e4k_s, mixgain) == -EINVAL)
+			return -1;
+#if 0 /* enhanced mixer gain seems to have no effect */
+		/* SM5BSZ: enhanced gain should affect how the AGC turns down the gain */
+		if (enhgain >= 0)
+			if (e4k_set_enh_gain(&devt->e4k_s, enhgain) == -EINVAL)
+				return -1;
 #endif
+		return 0;
+	}
+	e4k_set_lna_mixer_if_gain(&devt->e4k_s, gain);
 	return 0;
 }
+
 int e4000_set_if_gain(void *dev, int stage, int gain) {
 	rtlsdr_dev_t* devt = (rtlsdr_dev_t*)dev;
 	return e4k_if_gain_set(&devt->e4k_s, (uint8_t)stage, (int8_t)(gain / 10));
@@ -945,6 +953,9 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 	/* all gain values are expressed in tenths of a dB */
 	const int e4k_gains[] = { -10, 15, 40, 65, 90, 115, 140, 165, 190, 215,
 				  240, 290, 340, 420 };
+	/* Add standard gains */
+	const int e4k_std_gains[] = { -250, -200, -150, -100, -50, 0, 50, 
+				  100, 150, 200, 250};
 	const int fc0012_gains[] = { -99, -40, 71, 179, 192 };
 	const int fc0013_gains[] = { -99, -73, -65, -63, -60, -58, -54, 58, 61,
 				       63, 65, 67, 68, 70, 71, 179, 181, 182,
@@ -964,7 +975,12 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 
 	switch (dev->tuner_type) {
 	case RTLSDR_TUNER_E4000:
-		ptr = e4k_gains; len = sizeof(e4k_gains);
+		/* Use standard gains (5 dB step) if gain is mode above 1. */
+		if(dev->e4k_s.gain_mode <= GAIN_MODE_MANUAL) {
+			ptr = e4k_gains; len = sizeof(e4k_gains);
+		} else {
+			ptr = e4k_std_gains; len = sizeof(e4k_std_gains);
+		}
 		break;
 	case RTLSDR_TUNER_FC0012:
 		ptr = fc0012_gains; len = sizeof(fc0012_gains);

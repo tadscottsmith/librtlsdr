@@ -195,6 +195,7 @@ struct e4k_state {
 	uint8_t i2c_addr;
 	enum e4k_band band;
 	struct e4k_pll_params vco;
+	int gain_mode;
 	void *rtl_dev;
 };
 
@@ -217,6 +218,7 @@ int e4k_dc_offset_calibrate(struct e4k_state *e4k);
 int e4k_dc_offset_gen_table(struct e4k_state *e4k);
 
 int e4k_set_lna_gain(struct e4k_state *e4k, int32_t gain);
+int e4k_set_lna_mixer_if_gain(struct e4k_state *e4k, int32_t gain);
 int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t manual);
 int e4k_set_enh_gain(struct e4k_state *e4k, int32_t gain);
 #endif /* _E4K_TUNER_H */

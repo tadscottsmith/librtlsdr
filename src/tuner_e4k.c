@@ -40,6 +40,15 @@
 #define MHZ(x)	((x)*1000*1000)
 #define KHZ(x)	((x)*1000)
 
+enum rtl_sdr_gain_mode {
+	GAIN_MODE_AGC=0,
+	GAIN_MODE_MANUAL=1,
+	GAIN_MODE_LINEARITY=2,
+	GAIN_MODE_SENSITIVITY=3
+};
+
+#define MAX_E4K_GAIN_MODES 3
+
 uint32_t unsigned_delta(uint32_t a, uint32_t b)
 {
 	if (a > b)
@@ -673,6 +682,68 @@ int e4k_set_lna_gain(struct e4k_state *e4k, int32_t gain)
 	return -EINVAL;
 }
 
+static const struct gain_table_mode_struct {
+	int32_t gain;
+	int32_t LNA_gain;
+	int32_t mixer_gain;
+	int32_t IF_gain[6];
+} gain_table_mode_linearity[] = {         /* LNA Mixer IF  Total */
+	-250, -5,  4, { -3, 0, 0, 0, 9, 6},   /* -5    4  12      9  */
+	-200, -5,  4, { -3, 0, 0, 1, 12, 9},  /* -5    4  19     18  */
+	-150, -5,  4, { -3, 6, 0, 0, 12, 9},  /* -5    4  24     23  */
+	-100, -5, 12, { -3, 3, 0, 1, 12, 9},  /* -5   12  22     29  */
+	 -50, -5, 12, { -3, 6, 0, 0, 12, 12}, /* -5   12  27     34  */
+	   0,  0, 12, { -3, 6, 0, 0, 12, 12}, /*  0   12  27     39  */
+	  50,  5, 12, { -3, 6, 0, 0, 12, 12}, /*  5   12  27     44  */
+	 100, 10, 12, { -3, 6, 0, 0, 12, 12}, /* 10   12  27     49  */
+	 150, 15, 12, { -3, 6, 0, 0, 12, 12}, /* 15   12  27     54  */
+	 200, 20, 12, { -3, 6, 0, 0, 12, 12}, /* 20   12  27     59  */
+	 250, 30, 12, { -3, 6, 0, 0, 12, 12}, /* 30   12  27     69  */
+},
+gain_table_mode_sensitivity[] = {         /* LNA Mixer IF  Total */
+	-250,  5,  4, { -3, 0, 0, 1, 6, 3},   /*  5    4   7     16  */
+	-200, 10,  4, { -3, 0, 0, 1, 6, 3},   /* 10    4   7     21  */
+	-150, 15,  4, { -3, 0, 0, 1, 6, 3},   /* 15    4   7     26  */
+	-100, 20,  4, { -3, 0, 0, 1, 6, 3},   /* 20    4   7     31  */
+	 -50, 30,  4, { -3, 0, 0, 1, 6, 3},   /* 30    4   7     41  */
+	   0, 30, 12, { -3, 0, 0, 2, 3, 3},   /* 30   12   5     47  */
+	  50, 30, 12, { -3, 3, 0, 1, 6, 3},   /* 30   12  10     52  */
+	 100, 30, 12, {  6, 0, 0, 0, 6, 3},   /* 30   12  15     57  */
+	 150, 30, 12, {  6, 0, 0, 2, 9, 3},   /* 30   12  20     62  */
+	 200, 30, 12, {  6, 3, 0, 1, 9, 6},   /* 30   12  25     67  */
+	 250, 30, 12, {  6, 6, 0, 0, 9, 9},   /* 30   12  30     72  */
+};
+
+int e4k_set_lna_mixer_if_gain(struct e4k_state *e4k, int32_t gain)
+{
+	uint32_t i;
+	const struct gain_table_mode_struct * gain_table;
+	int gain_table_len;
+
+	if (e4k->gain_mode == GAIN_MODE_LINEARITY ) {
+		gain_table = gain_table_mode_linearity;
+		gain_table_len = ARRAY_SIZE(gain_table_mode_linearity);
+	} else if (e4k->gain_mode == GAIN_MODE_SENSITIVITY) {
+		gain_table = gain_table_mode_sensitivity;
+		gain_table_len = ARRAY_SIZE(gain_table_mode_sensitivity);
+	} else
+		return -EINVAL;
+
+	for(i = 0; i < gain_table_len; ++i) {
+		if (gain_table->gain == gain) {
+			int l;
+			e4k_set_lna_gain(e4k, gain_table->LNA_gain*10);
+			e4k_mixer_gain_set(e4k, gain_table->mixer_gain);
+			for (l=0; l<6; l++)
+				e4k_if_gain_set(e4k, l+1, gain_table->IF_gain[l]);
+
+			return gain;
+		}
+		gain_table++;
+	}
+	return -EINVAL;
+}
+
 int e4k_set_enh_gain(struct e4k_state *e4k, int32_t gain)
 {
 	uint32_t i;
@@ -699,7 +770,14 @@ int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t manual)
 
 		/* Set Mixer Gain Control to manual */
 		e4k_reg_set_mask(e4k, E4K_REG_AGC7, E4K_AGC7_MIX_GAIN_AUTO, 0);
+		/* Add a flag for more gain modes and return it
+		   so we know the library has this feature. */
+		e4k->gain_mode = manual;
+		if (e4k->gain_mode > MAX_E4K_GAIN_MODES)
+			e4k->gain_mode = MAX_E4K_GAIN_MODES;
+		return e4k->gain_mode;
 	} else {
+		e4k->gain_mode=GAIN_MODE_AGC;
 		/* Set LNA mode to auto */
 		e4k_reg_set_mask(e4k, E4K_REG_AGC1, E4K_AGC1_MOD_MASK, E4K_AGC_MOD_IF_SERIAL_LNA_AUTON);
 		/* Set Mixer Gain Control to auto */
