@@ -1699,8 +1699,6 @@ static int _rtlsdr_alloc_async_buffers(rtlsdr_dev_t *dev)
 	if (!dev->xfer) {
 		dev->xfer = malloc(dev->xfer_buf_num *
 				   sizeof(struct libusb_transfer *));
-	if (dev->xfer == NULL)
-		return -1;
 
 		for(i = 0; i < dev->xfer_buf_num; ++i)
 			dev->xfer[i] = libusb_alloc_transfer(0);
@@ -1709,14 +1707,9 @@ static int _rtlsdr_alloc_async_buffers(rtlsdr_dev_t *dev)
 	if (!dev->xfer_buf) {
 		dev->xfer_buf = malloc(dev->xfer_buf_num *
 					   sizeof(unsigned char *));
-	if (dev->xfer_buf == NULL)
-		return -1;
 
-		for(i = 0; i < dev->xfer_buf_num; ++i){
+		for(i = 0; i < dev->xfer_buf_num; ++i)
 			dev->xfer_buf[i] = malloc(dev->xfer_buf_len);
-			if (dev->xfer_buf[i] == NULL)
-				return -1;
-		}
 	}
 
 	return 0;
@@ -1784,11 +1777,7 @@ int rtlsdr_read_async(rtlsdr_dev_t *dev, rtlsdr_read_async_cb_t cb, void *ctx,
 	else
 		dev->xfer_buf_len = DEFAULT_BUF_LENGTH;
 
-	/* Check the error code. Free return if errors */
-	if(_rtlsdr_alloc_async_buffers(dev) < 0) {
-		_rtlsdr_free_async_buffers(dev);
-		return -1;
-	}
+	_rtlsdr_alloc_async_buffers(dev);
 
 	for(i = 0; i < dev->xfer_buf_num; ++i) {
 	/* Sleep a little here. 
