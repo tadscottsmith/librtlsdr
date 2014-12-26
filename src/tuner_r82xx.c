@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <errno.h>
 #include <string.h>
 
 #include "rtlsdr_i2c.h"
@@ -1092,8 +1093,126 @@ int r82xx_enable_manual_gain(struct r82xx_priv *priv, uint8_t manual)
 		return rc;
 
 	priv->gain_mode = manual;
-
 	return 0;
+}
+
+static int32_t LNA_stage[ARRAY_SIZE(r82xx_lna_gain_steps)];
+static int32_t Mixer_stage[ARRAY_SIZE(r82xx_mixer_gain_steps)];
+static int32_t IF_stage[ARRAY_SIZE(r82xx_vga_gain_steps)];
+
+static void r82xx_calculate_stage_gains(void)
+{
+		int i;
+		LNA_stage[0] = r82xx_lna_gain_steps[0];
+		for (i=1; i<ARRAY_SIZE(r82xx_lna_gain_steps); i++)
+			LNA_stage[i] = LNA_stage[i-1] + r82xx_lna_gain_steps[i];
+
+		Mixer_stage[0] = r82xx_mixer_gain_steps[0];
+		for (i=1; i<ARRAY_SIZE(r82xx_mixer_gain_steps); i++)
+			Mixer_stage[i] = Mixer_stage[i-1] + r82xx_mixer_gain_steps[i];
+
+		IF_stage[0] = VGA_BASE_GAIN;
+		for (i=1; i<ARRAY_SIZE(r82xx_vga_gain_steps); i++)
+			IF_stage[i] = IF_stage[i-1] + r82xx_vga_gain_steps[i];
+}
+
+static int r82xx_set_lna_gain(struct r82xx_priv *priv, int32_t gain)
+{
+	uint32_t lna_index;
+	for(lna_index = 0; lna_index < ARRAY_SIZE(LNA_stage); ++lna_index) {
+		if(LNA_stage[lna_index] == gain) {
+			int rc;
+			uint8_t data[4];
+			rc = r82xx_read(priv, 0x00, data, sizeof(data));
+			if (rc < 0)
+				return rc;
+			/* set LNA gain */
+			rc = r82xx_write_reg_mask(priv, 0x05, lna_index, 0x0f);
+			if (rc < 0)
+				return rc;
+			return gain;
+		}
+	}
+	return -EINVAL;
+}
+
+static int r82xx_set_mixer_gain(struct r82xx_priv *priv, int32_t gain)
+{
+	uint32_t mixer_index;
+	for(mixer_index = 0; mixer_index < ARRAY_SIZE(Mixer_stage); ++mixer_index) {
+		if(Mixer_stage[mixer_index] == gain) {
+			uint8_t data[4];
+			int rc;
+			rc = r82xx_read(priv, 0x00, data, sizeof(data));
+			if (rc < 0)
+				return rc;
+
+			/* set Mixer gain */
+			rc = r82xx_write_reg_mask(priv, 0x07, mixer_index, 0x0f);
+			if (rc < 0)
+				return rc;
+			return gain;
+		}
+	}
+	return -EINVAL;
+}
+
+static int r82xx_set_VGA_gain(struct r82xx_priv *priv, int32_t gain)
+{
+	uint32_t IF_index;
+	for(IF_index = 0; IF_index < ARRAY_SIZE(IF_stage); ++IF_index) {
+		if(IF_stage[IF_index] == gain) {
+			uint8_t data[4];
+			int rc;
+			rc = r82xx_read(priv, 0x00, data, sizeof(data));
+			if (rc < 0)
+				return rc;
+			/* set VGA gain */
+			rc = r82xx_write_reg_mask(priv, 0x0c, IF_index, 0x9f); // TODO 0x0F or 0x9F?
+			if (rc < 0)
+				return rc;
+			return gain;
+		}
+	}
+	return -EINVAL;
+}
+
+int r82xx_get_tuner_stage_gains(struct r82xx_priv *priv, uint8_t stage, int32_t **gains, const char **description)
+{
+	switch(stage) {
+		case 0: {
+			static const char LNA_desc[] = "LNA";
+
+			*gains = LNA_stage;
+			*description = LNA_desc;
+			return ARRAY_SIZE(LNA_stage);
+		}
+		case 1: {
+			static const char Mixer_desc[] = "Mixer";
+
+			*gains = Mixer_stage;
+			*description = Mixer_desc;
+			return ARRAY_SIZE(Mixer_stage);
+		}
+		case 2: {
+			static const char IF_desc[] = "IF";
+
+			*gains = IF_stage;
+			*description = IF_desc;
+			return ARRAY_SIZE(IF_stage);
+		}
+	}
+	return 0;
+}
+
+int r82xx_set_tuner_stage_gain(struct r82xx_priv *priv, uint8_t stage, int32_t gain)
+{
+	if (stage==0)
+		return r82xx_set_lna_gain(priv, gain);
+	else if (stage==1)
+		return r82xx_set_mixer_gain(priv, gain);
+	else
+		return r82xx_set_VGA_gain(priv, gain);
 }
 
 int r82xx_set_freq(struct r82xx_priv *priv, uint32_t freq)
@@ -1257,6 +1376,8 @@ int r82xx_init(struct r82xx_priv *priv)
 		goto err;
 
 	rc = r82xx_sysfreq_sel(priv, 0, TUNER_DIGITAL_TV, SYS_DVBT);
+
+	r82xx_calculate_stage_gains();
 
 	priv->init_done = 1;
 
