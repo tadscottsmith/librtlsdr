@@ -56,7 +56,8 @@
 static enum {
 	NO_BENCHMARK,
 	TUNER_BENCHMARK,
-	PPM_BENCHMARK
+	PPM_BENCHMARK,
+	GAIN_TEST
 } test_mode = NO_BENCHMARK;
 
 static int do_exit = 0;
@@ -221,6 +222,30 @@ static void rtlsdr_callback(unsigned char *buf, uint32_t len, void *ctx)
 #endif
 }
 
+static void test_gain(void)
+{
+	uint8_t stages = 0;
+	const char desc[DESCRIPTION_MAXLEN];
+	int32_t *gains;
+
+	while(1) {
+		int i;
+		int len = rtlsdr_get_tuner_stage_gains(dev, stages, NULL, NULL);
+		fprintf(stderr, "stage %u ret = %d\n", stages, len);
+		if (len<=0)
+			break;
+		gains = (int32_t *)malloc(len*sizeof(int32_t));
+		rtlsdr_get_tuner_stage_gains(dev, stages, gains, desc);
+
+		fprintf(stderr, "desc %s ", desc);
+		for(i=0; i<len; i++)
+			fprintf(stderr, "%d ", gains[i]);
+		fprintf(stderr, "\n");
+		free(gains);
+		stages++;
+	}
+}
+
 void e4k_benchmark(void)
 {
 	uint32_t freq, gap_start = 0, gap_end = 0;
@@ -300,6 +325,9 @@ int main(int argc, char **argv)
 			test_mode = PPM_BENCHMARK;
 			if (optarg)
 				ppm_duration = atoi(optarg);
+			break;
+		case 'g':
+			test_mode = GAIN_TEST;
 			break;
 		case 'S':
 			sync_mode = 1;
