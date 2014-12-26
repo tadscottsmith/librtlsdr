@@ -984,6 +984,7 @@ static int r82xx_read_gain(struct r82xx_priv *priv)
 	if (rc < 0)
 		return rc;
 
+	//TODO: looks wrong... <<1 >>3?
 	return ((data[3] & 0x0f) << 1) + ((data[3] & 0xf0) >> 4);
 }
 
