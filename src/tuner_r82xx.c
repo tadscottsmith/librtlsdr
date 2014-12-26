@@ -1004,24 +1004,14 @@ static const int r82xx_mixer_gain_steps[]  = {
 	0, 5, 10, 10, 19, 9, 10, 25, 17, 10, 8, 16, 13, 6, 3, -8
 };
 
-int r82xx_set_gain(struct r82xx_priv *priv, int set_manual_gain, int gain)
+int r82xx_set_gain(struct r82xx_priv *priv, int gain)
 {
 	int rc;
 
-	if (set_manual_gain) {
+	if (priv->gain_mode) {
 		int i, total_gain = 0;
 		uint8_t mix_index = 0, lna_index = 0;
 		uint8_t data[4];
-
-		/* LNA auto off */
-		rc = r82xx_write_reg_mask(priv, 0x05, 0x10, 0x10);
-		if (rc < 0)
-			return rc;
-
-		 /* Mixer auto off */
-		rc = r82xx_write_reg_mask(priv, 0x07, 0, 0x10);
-		if (rc < 0)
-			return rc;
 
 		rc = r82xx_read(priv, 0x00, data, sizeof(data));
 		if (rc < 0)
@@ -1053,6 +1043,34 @@ int r82xx_set_gain(struct r82xx_priv *priv, int set_manual_gain, int gain)
 		rc = r82xx_write_reg_mask(priv, 0x07, mix_index, 0x0f);
 		if (rc < 0)
 			return rc;
+	}
+
+	return 0;
+}
+
+int r82xx_enable_manual_gain(struct r82xx_priv *priv, uint8_t manual)
+{
+	int rc;
+	uint8_t data[4];
+
+	if (priv->gain_mode == manual)
+		return 0;
+
+	rc = r82xx_read(priv, 0x00, data, sizeof(data));
+	if (rc < 0)
+		return rc;
+
+	if (manual) {
+		/* LNA auto off */
+		rc = r82xx_write_reg_mask(priv, 0x05, 0x10, 0x10);
+		if (rc < 0)
+			return rc;
+
+		 /* Mixer auto off */
+		rc = r82xx_write_reg_mask(priv, 0x07, 0, 0x10);
+		if (rc < 0)
+			return rc;
+
 	} else {
 		/* LNA */
 		rc = r82xx_write_reg_mask(priv, 0x05, 0, 0x10);
@@ -1069,6 +1087,11 @@ int r82xx_set_gain(struct r82xx_priv *priv, int set_manual_gain, int gain)
 		if (rc < 0)
 			return rc;
 	}
+	rc = r82xx_read(priv, 0x00, data, sizeof(data));
+	if (rc < 0)
+		return rc;
+
+	priv->gain_mode = manual;
 
 	return 0;
 }
