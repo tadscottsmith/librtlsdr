@@ -613,7 +613,7 @@ static const int8_t if_stage23_gain[] = {
 };
 
 static const int8_t if_stage4_gain[] = {
-	0, 1, 2, 2
+	0, 1, 2, 3
 };
 
 static const int8_t if_stage56_gain[] = {
