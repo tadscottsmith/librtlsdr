@@ -1055,6 +1055,64 @@ int rtlsdr_set_tuner_if_gain(rtlsdr_dev_t *dev, int stage, int gain)
 	return r;
 }
 
+int rtlsdr_get_tuner_stage_gains(rtlsdr_dev_t *dev, uint8_t stage, int32_t *gains, char *description)
+{
+	const int32_t *gainptr = NULL;
+	const char *desc;
+	int len = 0;
+	rtlsdr_dev_t* devt = (rtlsdr_dev_t*)dev;
+
+	if (!dev)
+		return -1;
+
+	switch (dev->tuner_type) {
+	case RTLSDR_TUNER_E4000:
+		len = e4k_get_tuner_stage_gains(&devt->e4k_s, stage, &gainptr, &desc);
+		break;
+	case RTLSDR_TUNER_R820T:
+	case RTLSDR_TUNER_R828D:
+		len = r82xx_get_tuner_stage_gains(&devt->r82xx_p, stage, &gainptr, &desc);
+		break;
+	default:
+		return -1;
+	}
+
+	if (!gains) { /* no buffer provided, just return the count */
+		return len;
+	} else {
+		if (len)
+			memcpy(gains, gainptr, len*sizeof(*gains));
+		if (description) {
+			strncpy(description, desc, DESCRIPTION_MAXLEN-1);
+			description[DESCRIPTION_MAXLEN-1] = 0;
+		}
+		return len;
+	}
+}
+
+int rtlsdr_set_tuner_stage_gain(rtlsdr_dev_t *dev, uint8_t stage, int32_t gain)
+{
+	int rc;
+	rtlsdr_dev_t* devt = (rtlsdr_dev_t*)dev;
+
+	if (!dev)
+		return -1;
+	rtlsdr_set_i2c_repeater(dev, 1);
+	switch (dev->tuner_type) {
+		case RTLSDR_TUNER_E4000:
+			rc = e4k_set_tuner_stage_gain(&devt->e4k_s, stage, gain);
+			break;
+		case RTLSDR_TUNER_R820T:
+		case RTLSDR_TUNER_R828D:
+			rc = r82xx_set_tuner_stage_gain(&devt->r82xx_p, stage, gain);
+			break;
+		default:
+			rc = -1;
+	}
+	rtlsdr_set_i2c_repeater(dev, 0);
+	return rc;
+}
+
 int rtlsdr_set_tuner_gain_mode(rtlsdr_dev_t *dev, int mode)
 {
 	int r = 0;
