@@ -849,6 +849,87 @@ int e4k_mixer_gain_set(struct e4k_state *e4k, int8_t value)
 	return e4k_reg_set_mask(e4k, E4K_REG_GAIN2, 1, bit);
 }
 
+int e4k_get_tuner_stage_gains(struct e4k_state *e4k, uint8_t stage, int32_t **gains, const char **description)
+{
+	switch(stage) {
+	case 0: {
+		static const char LNA_desc[] = "LNA";
+		static const int32_t LNA_stage[] = { -50, -25,	0, 25, 50, 75, 100, 125, 150, 175, 200, 250, 300 };
+
+		*gains = LNA_stage;
+		*description = LNA_desc;
+		return ARRAY_SIZE(LNA_stage);
+	}
+	case 1: {
+		static const char Mixer_desc[] = "Mixer";
+		static const int32_t Mixer_stage[] = { 40, 120 };
+
+		*gains = Mixer_stage;
+		*description = Mixer_desc;
+		return ARRAY_SIZE(Mixer_stage);
+	}
+	case 2: {
+		static const char IF1_desc[] = "IF1";
+		static const int32_t IF1_stage[] = { -30, 60 };
+
+		*gains = IF1_stage;
+		*description = IF1_desc;
+		return ARRAY_SIZE(IF1_stage);
+	}
+	case 3: {
+		static const char IF2_desc[] = "IF2";
+		static const int32_t IF2_stage[] = { 0, 30, 60, 90 };
+
+		*gains = IF2_stage;
+		*description = IF2_desc;
+		return ARRAY_SIZE(IF2_stage);
+	}
+	case 4: {
+		static const char IF3_desc[] = "IF3";
+		static const int32_t IF3_stage[] = { 0, 30, 60, 90 };
+
+		*gains = IF3_stage;
+		*description = IF3_desc;
+		return ARRAY_SIZE(IF3_stage);
+	}
+	case 5: {
+		static const char IF4_desc[] = "IF4";
+		static const int32_t IF4_stage[] = { 0, 10, 20, 30 };
+
+		*gains = IF4_stage;
+		*description = IF4_desc;
+		return ARRAY_SIZE(IF4_stage);
+	}
+	case 6: {
+		static const char IF5_desc[] = "IF5";
+		static const int32_t IF5_stage[] = { 30, 60, 90, 120, 150 };
+
+		*gains = IF5_stage;
+		*description = IF5_desc;
+		return ARRAY_SIZE(IF5_stage);
+	}
+	case 7: {
+		static const char IF6_desc[] = "IF6";
+		static const int32_t IF6_stage[] = { 30, 60, 90, 120, 150 };
+
+		*gains = IF6_stage;
+		*description = IF6_desc;
+		return ARRAY_SIZE(IF6_stage);
+	}
+	}
+	return 0;
+}
+
+int e4k_set_tuner_stage_gain(struct e4k_state *e4k, uint8_t stage, int32_t gain)
+{
+	if (stage==0)
+		return e4k_set_lna_gain(e4k, gain);
+	else if (stage==1)
+		return e4k_mixer_gain_set(e4k, gain/10);
+	else
+		return e4k_if_gain_set(e4k, stage-2, gain);
+}
+
 int e4k_commonmode_set(struct e4k_state *e4k, int8_t value)
 {
 	if(value < 0)
