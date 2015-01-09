@@ -1178,7 +1178,7 @@ static int r82xx_set_VGA_gain(struct r82xx_priv *priv, int32_t gain)
 	return -EINVAL;
 }
 
-int r82xx_get_tuner_stage_gains(struct r82xx_priv *priv, uint8_t stage, int32_t **gains, const char **description)
+int r82xx_get_tuner_stage_gains(struct r82xx_priv *priv, uint8_t stage, const int32_t **gains, const char **description)
 {
 	switch(stage) {
 		case 0: {

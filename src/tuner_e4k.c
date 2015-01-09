@@ -849,7 +849,7 @@ int e4k_mixer_gain_set(struct e4k_state *e4k, int8_t value)
 	return e4k_reg_set_mask(e4k, E4K_REG_GAIN2, 1, bit);
 }
 
-int e4k_get_tuner_stage_gains(struct e4k_state *e4k, uint8_t stage, int32_t **gains, const char **description)
+int e4k_get_tuner_stage_gains(struct e4k_state *e4k, uint8_t stage, const int32_t **gains, const char **description)
 {
 	switch(stage) {
 	case 0: {

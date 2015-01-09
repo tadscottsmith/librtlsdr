@@ -219,7 +219,7 @@ int e4k_dc_offset_gen_table(struct e4k_state *e4k);
 
 int e4k_set_lna_gain(struct e4k_state *e4k, int32_t gain);
 int e4k_set_lna_mixer_if_gain(struct e4k_state *e4k, int32_t gain);
-int e4k_get_tuner_stage_gains(struct e4k_state *e4k, uint8_t stage, int32_t **gains, const char **description);
+int e4k_get_tuner_stage_gains(struct e4k_state *e4k, uint8_t stage, const int32_t **gains, const char **description);
 int e4k_set_tuner_stage_gain(struct e4k_state *e4k, uint8_t stage, int32_t gain);
 int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t manual);
 int e4k_set_enh_gain(struct e4k_state *e4k, int32_t gain);
