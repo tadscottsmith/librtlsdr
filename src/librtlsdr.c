@@ -961,10 +961,6 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 				       63, 65, 67, 68, 70, 71, 179, 181, 182,
 				       184, 186, 188, 191, 197 };
 	const int fc2580_gains[] = { 0 /* no gain values */ };
-	const int r82xx_gains[] = { 0, 9, 14, 27, 37, 77, 87, 125, 144, 157,
-				     166, 197, 207, 229, 254, 280, 297, 328,
-				     338, 364, 372, 386, 402, 421, 434, 439,
-				     445, 480, 496 };
 	const int unknown_gains[] = { 0 /* no gain values */ };
 
 	const int *ptr = NULL;
@@ -993,7 +989,7 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 		break;
 	case RTLSDR_TUNER_R820T:
 	case RTLSDR_TUNER_R828D:
-		ptr = r82xx_gains; len = sizeof(r82xx_gains);
+		r82xx_get_tuner_gains(&dev->r82xx_p, &ptr, &len);
 		break;
 	default:
 		ptr = unknown_gains; len = sizeof(unknown_gains);
