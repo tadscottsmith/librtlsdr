@@ -1231,7 +1231,7 @@ static int r82xx_set_lna_gain(struct r82xx_priv *priv, int32_t gain)
 			rc = r82xx_write_reg_mask(priv, 0x05, lna_index, 0x0f);
 			if (rc < 0)
 				return rc;
-			return gain;
+			return 0;
 		}
 	}
 	return -EINVAL;
@@ -1252,7 +1252,7 @@ static int r82xx_set_mixer_gain(struct r82xx_priv *priv, int32_t gain)
 			rc = r82xx_write_reg_mask(priv, 0x07, mixer_index, 0x0f);
 			if (rc < 0)
 				return rc;
-			return gain;
+			return 0;
 		}
 	}
 	return -EINVAL;
@@ -1272,7 +1272,7 @@ static int r82xx_set_VGA_gain(struct r82xx_priv *priv, int32_t gain)
 			rc = r82xx_write_reg_mask(priv, 0x0c, IF_index, 0x9f); // TODO 0x0F or 0x9F?
 			if (rc < 0)
 				return rc;
-			return gain;
+			return 0;
 		}
 	}
 	return -EINVAL;
