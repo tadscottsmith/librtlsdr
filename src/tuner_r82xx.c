@@ -1178,7 +1178,6 @@ static void r82xx_calculate_stage_gains(void)
 
 int r82xx_get_tuner_gains(struct r82xx_priv *priv, const int **ptr, int *len)
 {
-	int i;
 	if (!len & !ptr)
 		return -1;
 	*len = r82xx_gain_table_len * sizeof(int);

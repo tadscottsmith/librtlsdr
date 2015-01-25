@@ -720,7 +720,7 @@ int e4k_set_lna_mixer_if_gain(struct e4k_state *e4k, int32_t gain)
 {
 	uint32_t i;
 	const struct gain_table_mode_struct * gain_table;
-	int gain_table_len;
+	unsigned int gain_table_len;
 
 	if (e4k->gain_mode == GAIN_MODE_LINEARITY ) {
 		gain_table = gain_table_mode_linearity;
