@@ -225,7 +225,7 @@ static void rtlsdr_callback(unsigned char *buf, uint32_t len, void *ctx)
 static void test_gain(void)
 {
 	uint8_t stages = 0;
-	const char desc[DESCRIPTION_MAXLEN];
+	char desc[DESCRIPTION_MAXLEN];
 	int32_t *gains;
 
 	while(1) {
