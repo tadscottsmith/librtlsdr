@@ -1110,6 +1110,9 @@ int r82xx_enable_manual_gain(struct r82xx_priv *priv, uint8_t gain_mode)
 	int rc;
 	uint8_t data[4];
 
+	if (gain_mode > GAIN_MODE_SENSITIVITY)
+		return -EINVAL;
+
 	if (priv->gain_mode != gain_mode) {
 
 		rc = r82xx_read(priv, 0x00, data, sizeof(data));
