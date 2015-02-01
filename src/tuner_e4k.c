@@ -294,7 +294,7 @@ static int find_if_bw(enum e4k_if_filter filter, uint32_t bw)
  *  \param[in] e4k reference to the tuner chip
  *  \param[in] filter filter to be configured
  *  \param[in] bandwidth bandwidth to be configured
- *  \returns positive actual filter band-width, negative in case of error
+ *  \returns 0 success, negative in case of error
  */
 int e4k_if_filter_bw_set(struct e4k_state *e4k, enum e4k_if_filter filter,
 		         uint32_t bandwidth)
