@@ -305,6 +305,7 @@ int main(int argc, char **argv)
 	uint32_t out_block_size = DEFAULT_BUF_LENGTH;
 	int count;
 	int gains[100];
+	int bandwidths[100];
 
 	while ((opt = getopt(argc, argv, "d:s:b:tp::Sh")) != -1) {
 		switch (opt) {
@@ -376,12 +377,22 @@ int main(int argc, char **argv)
 #else
 	SetConsoleCtrlHandler( (PHANDLER_ROUTINE) sighandler, TRUE );
 #endif
+	rtlsdr_set_tuner_gain_mode(dev, GAIN_MODE_SENSITIVITY);
+
 	count = rtlsdr_get_tuner_gains(dev, NULL);
 	fprintf(stderr, "Supported gain values (%d): ", count);
 
 	count = rtlsdr_get_tuner_gains(dev, gains);
 	for (i = 0; i < count; i++)
 		fprintf(stderr, "%.1f ", gains[i] / 10.0);
+	fprintf(stderr, "\n");
+
+	count = rtlsdr_get_tuner_bandwidths(dev, NULL);
+	fprintf(stderr, "Supported bandwidth values (%d): ", count);
+
+	count = rtlsdr_get_tuner_bandwidths(dev, bandwidths);
+	for (i = 0; i < count; i++)
+		fprintf(stderr, "%d ", bandwidths[i]);
 	fprintf(stderr, "\n");
 
 	/* Set the sample rate */
