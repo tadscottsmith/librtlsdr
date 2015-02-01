@@ -716,6 +716,9 @@ gain_table_mode_sensitivity[] = {         /* LNA Mixer IF  Total */
 	 {250, 30, 12, {  6, 6, 0, 0, 9, 9}},   /* 25   12  30     67  */
 };
 
+static int tuner_gain_table_linearity[ARRAY_SIZE(gain_table_mode_linearity)];
+static int tuner_gain_table_sensitivity[ARRAY_SIZE(gain_table_mode_sensitivity)];
+
 int e4k_set_lna_mixer_if_gain(struct e4k_state *e4k, int32_t gain)
 {
 	uint32_t i;
@@ -764,6 +767,16 @@ int e4k_set_enh_gain(struct e4k_state *e4k, int32_t gain)
 		return -EINVAL;
 }
 
+static void compute_gain_table(struct e4k_state *e4k)
+{
+	unsigned int i;
+
+	for (i=0; i<ARRAY_SIZE(gain_table_mode_linearity); i++)
+		tuner_gain_table_linearity[i] = gain_table_mode_linearity[i].gain;
+	for (i=0; i<ARRAY_SIZE(gain_table_mode_sensitivity); i++)
+		tuner_gain_table_sensitivity[i] = gain_table_mode_sensitivity[i].gain;
+}
+
 int e4k_get_tuner_gains(struct e4k_state *e4k, const int **ptr, int *len)
 {
 	const int e4k_gains[] = { -10, 15, 40, 65, 90, 115, 140, 165, 190, 215,
@@ -774,15 +787,22 @@ int e4k_get_tuner_gains(struct e4k_state *e4k, const int **ptr, int *len)
 
 	if (!len & !ptr)
 		return -1;
-	/* Use standard gains (5 dB step) if gain is mode above 1. */
-	if(e4k->gain_mode <= GAIN_MODE_MANUAL) {
-		*ptr = e4k_gains;
-		*len = sizeof(e4k_gains);
-	} else {
-		*ptr = e4k_std_gains;
-		*len = sizeof(e4k_std_gains);
+
+	switch (e4k->gain_mode) {
+		case GAIN_MODE_MANUAL:
+			*ptr = e4k_gains;
+			*len = sizeof(e4k_gains);
+			return 0;
+		case GAIN_MODE_LINEARITY:
+			*ptr = tuner_gain_table_linearity;
+			*len = sizeof(tuner_gain_table_linearity);
+			return 0;
+		case GAIN_MODE_SENSITIVITY:
+			*ptr = tuner_gain_table_sensitivity;
+			*len = sizeof(tuner_gain_table_sensitivity);
+			return 0;
 	}
-	return 0;
+	return -1;
 }
 
 int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t manual)
@@ -1175,6 +1195,9 @@ int e4k_init(struct e4k_state *e4k)
 	e4k_reg_set_mask(e4k, E4K_REG_DC5, 0x03, 0);
 	e4k_reg_set_mask(e4k, E4K_REG_DCTIME1, 0x03, 0);
 	e4k_reg_set_mask(e4k, E4K_REG_DCTIME2, 0x03, 0);
+
+	/* Compute the gain tables */
+	compute_gain_table(e4k);
 
 	return 0;
 }
