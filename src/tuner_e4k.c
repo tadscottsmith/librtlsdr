@@ -764,6 +764,27 @@ int e4k_set_enh_gain(struct e4k_state *e4k, int32_t gain)
 		return -EINVAL;
 }
 
+int e4k_get_tuner_gains(struct e4k_state *e4k, const int **ptr, int *len)
+{
+	const int e4k_gains[] = { -10, 15, 40, 65, 90, 115, 140, 165, 190, 215,
+				  240, 290, 340, 420 };
+	/* Add standard gains */
+	const int e4k_std_gains[] = { -250, -200, -150, -100, -50, 0, 50,
+				  100, 150, 200, 250};
+
+	if (!len & !ptr)
+		return -1;
+	/* Use standard gains (5 dB step) if gain is mode above 1. */
+	if(e4k->gain_mode <= GAIN_MODE_MANUAL) {
+		*ptr = e4k_gains;
+		*len = sizeof(e4k_gains);
+	} else {
+		*ptr = e4k_std_gains;
+		*len = sizeof(e4k_std_gains);
+	}
+	return 0;
+}
+
 int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t manual)
 {
 	if (manual) {

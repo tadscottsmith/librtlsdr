@@ -951,11 +951,6 @@ enum rtlsdr_tuner rtlsdr_get_tuner_type(rtlsdr_dev_t *dev)
 int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 {
 	/* all gain values are expressed in tenths of a dB */
-	const int e4k_gains[] = { -10, 15, 40, 65, 90, 115, 140, 165, 190, 215,
-				  240, 290, 340, 420 };
-	/* Add standard gains */
-	const int e4k_std_gains[] = { -250, -200, -150, -100, -50, 0, 50, 
-				  100, 150, 200, 250};
 	const int fc0012_gains[] = { -99, -40, 71, 179, 192 };
 	const int fc0013_gains[] = { -99, -73, -65, -63, -60, -58, -54, 58, 61,
 				       63, 65, 67, 68, 70, 71, 179, 181, 182,
@@ -971,12 +966,7 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 
 	switch (dev->tuner_type) {
 	case RTLSDR_TUNER_E4000:
-		/* Use standard gains (5 dB step) if gain is mode above 1. */
-		if(dev->e4k_s.gain_mode <= GAIN_MODE_MANUAL) {
-			ptr = e4k_gains; len = sizeof(e4k_gains);
-		} else {
-			ptr = e4k_std_gains; len = sizeof(e4k_std_gains);
-		}
+		e4k_get_tuner_gains(&dev->e4k_s, &ptr, &len);
 		break;
 	case RTLSDR_TUNER_FC0012:
 		ptr = fc0012_gains; len = sizeof(fc0012_gains);
