@@ -216,6 +216,29 @@ RTLSDR_API int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains);
 RTLSDR_API int rtlsdr_set_tuner_gain(rtlsdr_dev_t *dev, int gain);
 
 /*!
+ * Get a list of bandwidths supported by the tuner.
+ *
+ * NOTE: The bandwidths argument must be preallocated by the caller. If NULL is
+ * being given instead, the number of available bandwidth values will be returned.
+ *
+ * \param dev the device handle given by rtlsdr_open()
+ * \param bandwidths array of bandwidth values in Hz.
+ * \return <= 0 on error, number of available (returned) gain values otherwise
+ */
+RTLSDR_API int rtlsdr_get_tuner_bandwidths(rtlsdr_dev_t *dev, int *bandwidths);
+
+/*!
+ * Set the bandwidth for the device.
+ *
+ * Valid bandwidth values may be queried with \ref rtlsdr_get_tuner_bandwidths function.
+ *
+ * \param dev the device handle given by rtlsdr_open()
+ * \param bandwidth in Hz.
+ * \return 0 on success
+ */
+RTLSDR_API int rtlsdr_set_tuner_bandwidth(rtlsdr_dev_t *dev, int bandwidth);
+
+/*!
  * Get actual gain the device is configured to.
  *
  * \param dev the device handle given by rtlsdr_open()

@@ -1224,6 +1224,16 @@ int r82xx_set_bandwidth(struct r82xx_priv *priv, int bandwidth,  uint32_t rate)
 	return priv->int_freq;
 }
 
+int r82xx_get_tuner_bandwidths(struct r82xx_priv *priv, const int **ptr, int *len)
+{
+	if (!len & !ptr)
+		return -1;
+	*len = r82xx_bandwidth_table_len * sizeof(int);
+	*ptr = r82xx_bandwidth_table;
+	return 0;
+}
+
+
 static void r82xx_compute_gain_table(struct r82xx_priv *priv)
 {
 	int i;

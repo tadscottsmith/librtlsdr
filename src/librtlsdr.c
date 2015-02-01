@@ -955,6 +955,29 @@ enum rtlsdr_tuner rtlsdr_get_tuner_type(rtlsdr_dev_t *dev)
 	return dev->tuner_type;
 }
 
+int rtlsdr_get_tuner_bandwidths(rtlsdr_dev_t *dev, int *bandwidths)
+{
+	const int *ptr;
+	int len;
+	const int unknown_bandwidths[] = { 0 /* no bandwidths known */ };
+
+	if (!dev)
+		return -1;
+	switch (dev->tuner_type) {
+		case RTLSDR_TUNER_R820T:
+		case RTLSDR_TUNER_R828D:
+			r82xx_get_tuner_bandwidths(&dev->r82xx_p, &ptr, &len);
+			break;
+		default:
+			ptr = unknown_bandwidths; len = sizeof(unknown_bandwidths);
+			break;
+	}
+	if (bandwidths) { /* buffer provided, copy data */
+		memcpy(bandwidths, ptr, len);
+	}
+	return len / sizeof(int);
+}
+
 int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 {
 	/* all gain values are expressed in tenths of a dB */
@@ -964,7 +987,6 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 				       184, 186, 188, 191, 197 };
 	const int fc2580_gains[] = { 0 /* no gain values */ };
 	const int unknown_gains[] = { 0 /* no gain values */ };
-
 	const int *ptr = NULL;
 	int len = 0;
 
@@ -1001,6 +1023,21 @@ int rtlsdr_get_tuner_gains(rtlsdr_dev_t *dev, int *gains)
 
 		return len / sizeof(int);
 	}
+}
+
+int rtlsdr_set_tuner_bandwidth(rtlsdr_dev_t *dev, int bandwidth)
+{
+	int r = 0;
+
+	if (!dev || !dev->tuner)
+		return -1;
+
+	if (dev->tuner->set_bw) {
+		rtlsdr_set_i2c_repeater(dev, 1);
+		r = dev->tuner->set_bw((void *)dev, bandwidth);
+		rtlsdr_set_i2c_repeater(dev, 0);
+	}
+	return r;
 }
 
 int rtlsdr_set_tuner_gain(rtlsdr_dev_t *dev, int gain)
