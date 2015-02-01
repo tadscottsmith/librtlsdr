@@ -805,9 +805,9 @@ int e4k_get_tuner_gains(struct e4k_state *e4k, const int **ptr, int *len)
 	return -1;
 }
 
-int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t manual)
+int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t mode)
 {
-	if (manual) {
+	if (mode) {
 		/* Set LNA mode to manual */
 		e4k_reg_set_mask(e4k, E4K_REG_AGC1, E4K_AGC1_MOD_MASK, E4K_AGC_MOD_SERIAL);
 
@@ -815,9 +815,11 @@ int e4k_enable_manual_gain(struct e4k_state *e4k, uint8_t manual)
 		e4k_reg_set_mask(e4k, E4K_REG_AGC7, E4K_AGC7_MIX_GAIN_AUTO, 0);
 		/* Add a flag for more gain modes and return it
 		   so we know the library has this feature. */
-		e4k->gain_mode = manual;
+		e4k->gain_mode = mode;
 		if (e4k->gain_mode > MAX_E4K_GAIN_MODES)
 			e4k->gain_mode = MAX_E4K_GAIN_MODES;
+		if (e4k->gain_mode == GAIN_MODE_MANUAL)
+			return 0; /* compatibility to old mode API */
 		return e4k->gain_mode;
 	} else {
 		e4k->gain_mode=GAIN_MODE_AGC;

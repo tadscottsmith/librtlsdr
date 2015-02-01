@@ -296,9 +296,12 @@ enum rtl_sdr_gain_mode {
  * Set the gain mode (automatic/manual) for the device.
  * Manual gain mode must be enabled for the gain setter function to work.
  *
+ * Advanced gain modes can be enabled. If not implemented, the mode with
+ * the highest number will be set
  * \param dev the device handle given by rtlsdr_open()
  * \param manual gain mode, 1 means manual gain mode shall be enabled.
- * \return 0 on success
+ * \return <= 0 on error, 0 on success for GAIN_MODE_AGC and GAIN_MODE_MANUAL (compatiblity),
+ * \return the mode supplied on success or the highest mode supported
  */
 RTLSDR_API int rtlsdr_set_tuner_gain_mode(rtlsdr_dev_t *dev, int manual);
 

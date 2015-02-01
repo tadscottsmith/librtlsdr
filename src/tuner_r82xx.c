@@ -1013,6 +1013,8 @@ enum rtl_sdr_gain_mode {
 	GAIN_MODE_SENSITIVITY=3
 };
 
+#define GAIN_MODE_MAX 3
+
 #define SIZE_GAIN_TABLE	22
 
 static const struct gain_index_table {
@@ -1110,8 +1112,8 @@ int r82xx_enable_manual_gain(struct r82xx_priv *priv, uint8_t gain_mode)
 	int rc;
 	uint8_t data[4];
 
-	if (gain_mode > GAIN_MODE_SENSITIVITY)
-		return -EINVAL;
+	if (gain_mode > GAIN_MODE_MAX)
+		gain_mode = GAIN_MODE_MAX;
 
 	if (priv->gain_mode != gain_mode) {
 
@@ -1154,9 +1156,9 @@ int r82xx_enable_manual_gain(struct r82xx_priv *priv, uint8_t gain_mode)
 		r82xx_compute_gain_table(priv);
 	}
 
-	if (gain_mode == GAIN_MODE_LINEARITY || gain_mode == GAIN_MODE_SENSITIVITY)
-		return gain_mode;
-	return 0;
+	if (priv->gain_mode == GAIN_MODE_MANUAL)
+		return 0; /* compatibility to old mode API */
+	return priv->gain_mode;
 }
 
 static int32_t LNA_stage[ARRAY_SIZE(r82xx_lna_gain_steps)];
