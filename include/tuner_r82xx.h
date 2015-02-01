@@ -91,6 +91,7 @@ struct r82xx_priv {
 
 	uint32_t			bw;	/* in MHz */
 	int				gain_mode;
+	int				bw_index;
 
 	void *rtl_dev;
 };
@@ -123,4 +124,5 @@ int r82xx_get_tuner_gains(struct r82xx_priv *priv, const int **ptr, int *len);
 int r82xx_get_tuner_stage_gains(struct r82xx_priv *priv, uint8_t stage, const int32_t **gains, const char **description);
 int r82xx_set_tuner_stage_gain(struct r82xx_priv *priv, uint8_t stage, int32_t gain);
 
+int r82xx_set_bandwidth(struct r82xx_priv *priv, int bandwidth,  uint32_t rate);
 #endif

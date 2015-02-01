@@ -1188,6 +1188,42 @@ int r82xx_get_tuner_gains(struct r82xx_priv *priv, const int **ptr, int *len)
 	return 0;
 }
 
+
+static const int r82xx_bandwidth_table_len = 9;
+static const int r82xx_bandwidth_table[]={ 300000, 400000, 550000,
+                       700000,1000000,1200000,1300000,1600000,2200000};
+static const uint8_t r82xx_bandwidth_table_0xb[]={0xe7,
+                   0xe8,0xe9,0xea,0xeb,0xec,0xed,0xef,0x51};
+static const int r82xx_if_freq_table[]  ={2150000,2100000,2050000,
+                      1700000,1550000,1350000,1300000,1200000,4700000};
+
+int r82xx_set_bandwidth(struct r82xx_priv *priv, int bandwidth,  uint32_t rate)
+{
+	uint8_t val;
+	int rc;
+	int i;
+	/* find a filter setting that is close to the required bandwidth */
+
+	for(i=0; i<r82xx_bandwidth_table_len-1; i++)
+		/* bandwidth is compared to median of the current and next available bandwidth in the table */
+		if (bandwidth < (r82xx_bandwidth_table[i+1] + r82xx_bandwidth_table[i])/2)
+			break;
+
+	val=0xef;
+	rc=r82xx_write(priv, 0x0a, &val, 1);
+	if (rc < 0)
+		return rc;
+
+	val=r82xx_bandwidth_table_0xb[i];
+	rc=r82xx_write(priv, 0x0b, &val, 1);
+	if (rc < 0)
+		return rc;
+	priv->int_freq = r82xx_if_freq_table[i];
+	if(rate < 400000)
+		priv->int_freq-=240000;
+	return priv->int_freq;
+}
+
 static void r82xx_compute_gain_table(struct r82xx_priv *priv)
 {
 	int i;

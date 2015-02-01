@@ -246,7 +246,14 @@ int r820t_set_freq(void *dev, uint32_t freq) {
 	rtlsdr_dev_t* devt = (rtlsdr_dev_t*)dev;
 	return r82xx_set_freq(&devt->r82xx_p, freq);
 }
-int r820t_set_bw(void *dev, int bw) { return 0; }
+int r820t_set_bw(void *dev, int bw) {
+	int rc;
+	rtlsdr_dev_t* devt = (rtlsdr_dev_t*)dev;
+	rc=r82xx_set_bandwidth(&devt->r82xx_p, bw, devt->rate);
+	if(rc < 0)
+		return rc;
+	return rtlsdr_set_if_freq(dev, rc);
+}
 int r820t_set_gain(void *dev, int gain) {
 	rtlsdr_dev_t* devt = (rtlsdr_dev_t*)dev;
 	return r82xx_set_gain(&devt->r82xx_p, gain);
