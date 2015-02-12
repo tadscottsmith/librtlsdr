@@ -1076,7 +1076,7 @@ int r82xx_set_gain(struct r82xx_priv *priv, int gain)
 				const struct gain_index_table *t;
 				t = &r82xx_gain_index_table[priv->gain_mode == GAIN_MODE_LINEARITY ? 0 : 1 ];
 
-				for (i = r82xx_gain_table_len - 1; i>=0; i--)
+				for (i = r82xx_gain_table_len - 1; i>0; i--)
 					if (gain >= r82xx_gain_table[i])
 						break;
 
