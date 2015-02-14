@@ -1245,13 +1245,15 @@ static void r82xx_compute_gain_table(struct r82xx_priv *priv)
 		case GAIN_MODE_MANUAL: 
 		{
 			int len = 0, total_gain = 0;
+			r82xx_gain_table[len++] = 0;
 			for (i=1; i<16; i++) {
-				r82xx_gain_table[len++] = total_gain;
 				total_gain += r82xx_lna_gain_steps[i];
-				r82xx_gain_table[len++] = total_gain;
+				if (total_gain > r82xx_gain_table[len-1])
+					r82xx_gain_table[len++] = total_gain;
 				total_gain += r82xx_mixer_gain_steps[i];
+				if (total_gain > r82xx_gain_table[len-1])
+					r82xx_gain_table[len++] = total_gain;
 			}
-			r82xx_gain_table[len++] = total_gain;
 			r82xx_gain_table_len = len;
 			break;
 		}
