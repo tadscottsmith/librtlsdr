@@ -994,6 +994,7 @@ static int r82xx_read_gain(struct r82xx_priv *priv)
  */
 
 #define VGA_BASE_GAIN	-47
+#define MANUAL_GAIN_VGA_INDEX 8
 static const int r82xx_vga_gain_steps[]  = {
 	0, 26, 26, 30, 42, 35, 24, 13, 14, 32, 36, 34, 35, 37, 35, 36
 };
@@ -1056,7 +1057,7 @@ int r82xx_set_gain(struct r82xx_priv *priv, int gain)
 		switch (priv->gain_mode) {
 		case GAIN_MODE_MANUAL: /* original algorithm */
 			/* set fixed VGA gain for now (16.3 dB) */
-			vga_index = 0x08;
+			vga_index = MANUAL_GAIN_VGA_INDEX;
 
 			for (i = 0; i < 15; i++) {
 				if (total_gain >= gain)
@@ -1258,10 +1259,11 @@ static void r82xx_compute_gain_table(struct r82xx_priv *priv)
 			const struct gain_index_table *t;
 			t = &r82xx_gain_index_table[priv->gain_mode == GAIN_MODE_LINEARITY ? 0 : 1 ];
 			for (i=0; i<SIZE_GAIN_TABLE; i++)
-				r82xx_gain_table[i] = -163 + // normalize to same VGA gain as GAIN_MODE_MANUAL
+				r82xx_gain_table[i] =
 					LNA_stage[t->lna_gain_index[SIZE_GAIN_TABLE-i-1]] +
 					Mixer_stage[t->mix_gain_index[SIZE_GAIN_TABLE-i-1]] +
-					IF_stage[t->vga_gain_index[SIZE_GAIN_TABLE-i-1]];
+					IF_stage[t->vga_gain_index[SIZE_GAIN_TABLE-i-1]] -
+					IF_stage[MANUAL_GAIN_VGA_INDEX]; // normalize to same VGA gain as GAIN_MODE_MANUAL
 			r82xx_gain_table_len = SIZE_GAIN_TABLE;
 			break;
 		}
