@@ -1108,15 +1108,16 @@ int rtlsdr_get_tuner_stage_gains(rtlsdr_dev_t *dev, uint8_t stage, int32_t *gain
 		return -1;
 	}
 
+	if (description) {
+		strncpy(description, desc, DESCRIPTION_MAXLEN-1);
+		description[DESCRIPTION_MAXLEN-1] = 0;
+	}
+
 	if (!gains) { /* no buffer provided, just return the count */
 		return len;
 	} else {
 		if (len)
 			memcpy(gains, gainptr, len*sizeof(*gains));
-		if (description) {
-			strncpy(description, desc, DESCRIPTION_MAXLEN-1);
-			description[DESCRIPTION_MAXLEN-1] = 0;
-		}
 		return len;
 	}
 }
