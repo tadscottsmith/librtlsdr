@@ -71,7 +71,8 @@ struct time_generic
 static enum {
 	NO_BENCHMARK,
 	TUNER_BENCHMARK,
-	PPM_BENCHMARK
+	PPM_BENCHMARK,
+	GAIN_TEST
 } test_mode = NO_BENCHMARK;
 
 static int do_exit = 0;
@@ -256,6 +257,30 @@ static void rtlsdr_callback(unsigned char *buf, uint32_t len, void *ctx)
 		ppm_test(len);
 }
 
+static void test_gain(void)
+{
+	uint8_t stages = 0;
+	char desc[DESCRIPTION_MAXLEN];
+	int32_t *gains;
+
+	while(1) {
+		int i;
+		int len = rtlsdr_get_tuner_stage_gains(dev, stages, NULL, NULL);
+		fprintf(stderr, "stage %u ret = %d\n", stages, len);
+		if (len<=0)
+			break;
+		gains = (int32_t *)malloc(len*sizeof(int32_t));
+		rtlsdr_get_tuner_stage_gains(dev, stages, gains, desc);
+
+		fprintf(stderr, "desc %s ", desc);
+		for(i=0; i<len; i++)
+			fprintf(stderr, "%d ", gains[i]);
+		fprintf(stderr, "\n");
+		free(gains);
+		stages++;
+	}
+}
+
 void e4k_benchmark(void)
 {
 	uint32_t freq, gap_start = 0, gap_end = 0;
@@ -315,6 +340,7 @@ int main(int argc, char **argv)
 	uint32_t out_block_size = DEFAULT_BUF_LENGTH;
 	int count;
 	int gains[100];
+	int bandwidths[100];
 
 	while ((opt = getopt(argc, argv, "d:s:b:tp::Sh")) != -1) {
 		switch (opt) {
@@ -335,6 +361,9 @@ int main(int argc, char **argv)
 			test_mode = PPM_BENCHMARK;
 			if (optarg)
 				ppm_duration = atoi(optarg);
+			break;
+		case 'g':
+			test_mode = GAIN_TEST;
 			break;
 		case 'S':
 			sync_mode = 1;
@@ -383,12 +412,22 @@ int main(int argc, char **argv)
 #else
 	SetConsoleCtrlHandler( (PHANDLER_ROUTINE) sighandler, TRUE );
 #endif
+	rtlsdr_set_tuner_gain_mode(dev, GAIN_MODE_SENSITIVITY);
+
 	count = rtlsdr_get_tuner_gains(dev, NULL);
 	fprintf(stderr, "Supported gain values (%d): ", count);
 
 	count = rtlsdr_get_tuner_gains(dev, gains);
 	for (i = 0; i < count; i++)
 		fprintf(stderr, "%.1f ", gains[i] / 10.0);
+	fprintf(stderr, "\n");
+
+	count = rtlsdr_get_tuner_bandwidths(dev, NULL);
+	fprintf(stderr, "Supported bandwidth values (%d): ", count);
+
+	count = rtlsdr_get_tuner_bandwidths(dev, bandwidths);
+	for (i = 0; i < count; i++)
+		fprintf(stderr, "%d ", bandwidths[i]);
 	fprintf(stderr, "\n");
 
 	/* Set the sample rate */
